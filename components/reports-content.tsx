@@ -253,7 +253,7 @@ Case success rate: 87%
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <h1 className="text-2xl font-bold">Reports & Analytics</h1>
+          <h1 className="md:text-2xl font-bold">Reports & Analytics</h1>
         </div>
         <div className="flex gap-4">
           <Select value={selectedReport} onValueChange={setSelectedReport}>
