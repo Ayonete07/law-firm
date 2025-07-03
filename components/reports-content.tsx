@@ -3,7 +3,6 @@
 import { useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { SidebarTrigger } from "@/components/ui/sidebar"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { BarChart3, TrendingUp, TrendingDown, Users, Briefcase, DollarSign } from "lucide-react"
 
@@ -74,7 +73,6 @@ export function ReportsContent() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <SidebarTrigger />
           <h1 className="text-2xl font-bold">Reports & Analytics</h1>
         </div>
         <div className="flex gap-4">
