@@ -154,7 +154,7 @@ export function CalendarContent() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
-          <h1 className="text-xl md:text-2xl font-bold">Appointments</h1>
+          <h1 className="md:text-2xl font-bold">Appointments</h1>
         </div>
         <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
           <DialogTrigger asChild>
