@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
+import { useToast } from "@/hooks/use-toast"
 
 interface Case {
   id: string
@@ -67,9 +68,12 @@ export function CasesContent() {
 
   const [searchTerm, setSearchTerm] = useState("")
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   const [selectedCase, setSelectedCase] = useState<Case | null>(null)
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false)
   const [newCase, setNewCase] = useState<Partial<Case>>({})
+  const [editingCase, setEditingCase] = useState<Case | null>(null)
+  const { toast } = useToast()
 
   const filteredCases = cases.filter(
     (caseItem) =>
@@ -95,11 +99,40 @@ export function CasesContent() {
       setCases([...cases, caseItem])
       setNewCase({})
       setIsAddDialogOpen(false)
+
+      toast({
+        title: "Case Added",
+        description: `${caseItem.title} has been successfully added.`,
+      })
+    }
+  }
+
+  const handleEditCase = (caseItem: Case) => {
+    setEditingCase(caseItem)
+    setIsEditDialogOpen(true)
+  }
+
+  const handleUpdateCase = () => {
+    if (editingCase) {
+      setCases(cases.map((c) => (c.id === editingCase.id ? editingCase : c)))
+      setIsEditDialogOpen(false)
+      setEditingCase(null)
+
+      toast({
+        title: "Case Updated",
+        description: `${editingCase.title} has been successfully updated.`,
+      })
     }
   }
 
   const handleDeleteCase = (id: string) => {
+    const caseItem = cases.find((c) => c.id === id)
     setCases(cases.filter((caseItem) => caseItem.id !== id))
+
+    toast({
+      title: "Case Deleted",
+      description: `${caseItem?.title} has been deleted successfully.`,
+    })
   }
 
   const handleViewCase = (caseItem: Case) => {
@@ -310,7 +343,7 @@ export function CasesContent() {
                   <Eye className="w-4 h-4 mr-1" />
                   View
                 </Button>
-                <Button size="sm" variant="outline">
+                <Button size="sm" variant="outline" onClick={() => handleEditCase(caseItem)}>
                   <Edit className="w-4 h-4 mr-1" />
                   Edit
                 </Button>
@@ -327,6 +360,127 @@ export function CasesContent() {
           </Card>
         ))}
       </div>
+
+      {/* Edit Case Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Edit Case</DialogTitle>
+          </DialogHeader>
+          {editingCase && (
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="edit-title">Case Title</Label>
+                <Input
+                  id="edit-title"
+                  value={editingCase.title}
+                  onChange={(e) => setEditingCase({ ...editingCase, title: e.target.value })}
+                  placeholder="Enter case title"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="edit-client">Client</Label>
+                  <Input
+                    id="edit-client"
+                    value={editingCase.client}
+                    onChange={(e) => setEditingCase({ ...editingCase, client: e.target.value })}
+                    placeholder="Enter client name"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="edit-attorney">Attorney</Label>
+                  <Input
+                    id="edit-attorney"
+                    value={editingCase.attorney}
+                    onChange={(e) => setEditingCase({ ...editingCase, attorney: e.target.value })}
+                    placeholder="Enter attorney name"
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-3 gap-4">
+                <div>
+                  <Label htmlFor="edit-caseType">Case Type</Label>
+                  <Select
+                    value={editingCase.caseType}
+                    onValueChange={(value) => setEditingCase({ ...editingCase, caseType: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Business Law">Business Law</SelectItem>
+                      <SelectItem value="Family Law">Family Law</SelectItem>
+                      <SelectItem value="Criminal Law">Criminal Law</SelectItem>
+                      <SelectItem value="Real Estate">Real Estate</SelectItem>
+                      <SelectItem value="Employment Law">Employment Law</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label htmlFor="edit-status">Status</Label>
+                  <Select
+                    value={editingCase.status}
+                    onValueChange={(value) => setEditingCase({ ...editingCase, status: value as Case["status"] })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Active">Active</SelectItem>
+                      <SelectItem value="Pending">Pending</SelectItem>
+                      <SelectItem value="Closed">Closed</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label htmlFor="edit-priority">Priority</Label>
+                  <Select
+                    value={editingCase.priority}
+                    onValueChange={(value) => setEditingCase({ ...editingCase, priority: value as Case["priority"] })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select priority" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="High">High</SelectItem>
+                      <SelectItem value="Medium">Medium</SelectItem>
+                      <SelectItem value="Low">Low</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div>
+                <Label htmlFor="edit-deadline">Deadline</Label>
+                <Input
+                  id="edit-deadline"
+                  type="date"
+                  value={editingCase.deadline}
+                  onChange={(e) => setEditingCase({ ...editingCase, deadline: e.target.value })}
+                />
+              </div>
+              <div>
+                <Label htmlFor="edit-description">Description</Label>
+                <Textarea
+                  id="edit-description"
+                  value={editingCase.description}
+                  onChange={(e) => setEditingCase({ ...editingCase, description: e.target.value })}
+                  placeholder="Enter case description"
+                  rows={3}
+                />
+              </div>
+              <div className="flex gap-2">
+                <Button onClick={handleUpdateCase} className="flex-1">
+                  Update Case
+                </Button>
+                <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+                  Cancel
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* Case Details Dialog */}
       <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>

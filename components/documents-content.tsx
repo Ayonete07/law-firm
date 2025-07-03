@@ -9,6 +9,7 @@ import { Search, Upload, FileText, Download, Eye, Trash2, Filter } from "lucide-
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { useToast } from "@/hooks/use-toast"
 
 interface Document {
   id: string
@@ -59,6 +60,8 @@ export function DocumentsContent() {
   const [filterCategory, setFilterCategory] = useState<string>("all")
   const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false)
   const [newDocument, setNewDocument] = useState<Partial<Document>>({})
+  const [downloadingId, setDownloadingId] = useState<string | null>(null)
+  const { toast } = useToast()
 
   const filteredDocuments = documents.filter((doc) => {
     const matchesSearch =
@@ -84,11 +87,147 @@ export function DocumentsContent() {
       setDocuments([...documents, document])
       setNewDocument({})
       setIsUploadDialogOpen(false)
+
+      toast({
+        title: "Document Uploaded",
+        description: `${document.name} has been successfully uploaded.`,
+      })
     }
   }
 
   const handleDeleteDocument = (id: string) => {
+    const document = documents.find((doc) => doc.id === id)
     setDocuments(documents.filter((doc) => doc.id !== id))
+
+    toast({
+      title: "Document Deleted",
+      description: `${document?.name} has been deleted successfully.`,
+    })
+  }
+
+  const handleDownloadDocument = async (document: Document) => {
+    setDownloadingId(document.id)
+
+    try {
+      // Simulate download processing time
+      await new Promise((resolve) => setTimeout(resolve, 1500))
+
+      // Generate sample document content based on type
+      let content = ""
+      let mimeType = ""
+      let fileExtension = ""
+
+      switch (document.type.toLowerCase()) {
+        case "pdf":
+          content = `D-CASE Law Firm Document
+Document: ${document.name}
+Client: ${document.client}
+Case: ${document.case}
+Category: ${document.category}
+Upload Date: ${document.uploadDate}
+
+This is a sample ${document.category.toLowerCase()} document for ${document.client}.
+The document contains important legal information related to ${document.case}.
+
+Generated on: ${new Date().toLocaleString()}
+File Size: ${document.size}
+Document ID: ${document.id}`
+          mimeType = "application/pdf"
+          fileExtension = "pdf"
+          break
+
+        case "docx":
+        case "doc":
+          content = `D-CASE Law Firm Document
+
+Document: ${document.name}
+Client: ${document.client}
+Case: ${document.case}
+Category: ${document.category}
+Upload Date: ${document.uploadDate}
+
+This is a sample ${document.category.toLowerCase()} document for ${document.client}.
+The document contains important legal information related to ${document.case}.
+
+Generated on: ${new Date().toLocaleString()}
+File Size: ${document.size}
+Document ID: ${document.id}`
+          mimeType = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+          fileExtension = "docx"
+          break
+
+        case "txt":
+          content = `D-CASE Law Firm Document
+Document: ${document.name}
+Client: ${document.client}
+Case: ${document.case}
+Category: ${document.category}
+Upload Date: ${document.uploadDate}
+
+This is a sample ${document.category.toLowerCase()} document for ${document.client}.
+The document contains important legal information related to ${document.case}.
+
+Generated on: ${new Date().toLocaleString()}
+File Size: ${document.size}
+Document ID: ${document.id}`
+          mimeType = "text/plain"
+          fileExtension = "txt"
+          break
+
+        case "zip":
+          content = `D-CASE Law Firm Archive
+Archive: ${document.name}
+Client: ${document.client}
+Case: ${document.case}
+Category: ${document.category}
+Upload Date: ${document.uploadDate}
+
+This archive contains multiple files related to ${document.case}.
+Archive Size: ${document.size}
+Document ID: ${document.id}`
+          mimeType = "application/zip"
+          fileExtension = "zip"
+          break
+
+        default:
+          content = `D-CASE Law Firm Document - ${document.name}`
+          mimeType = "application/octet-stream"
+          fileExtension = document.type.toLowerCase()
+      }
+
+      // Create and download the file
+      const blob = new Blob([content], { type: mimeType })
+      const url = URL.createObjectURL(blob)
+      const link = document.createElement("a")
+      link.href = url
+      link.download = `${document.name.split(".")[0]}_downloaded.${fileExtension}`
+      link.style.display = "none"
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      URL.revokeObjectURL(url)
+
+      toast({
+        title: "Download Successful",
+        description: `${document.name} has been downloaded successfully.`,
+      })
+    } catch (error) {
+      toast({
+        title: "Download Failed",
+        description: `Failed to download ${document.name}. Please try again.`,
+        variant: "destructive",
+      })
+    } finally {
+      setDownloadingId(null)
+    }
+  }
+
+  const handleViewDocument = (document: Document) => {
+    // Simulate opening document in viewer
+    toast({
+      title: "Opening Document",
+      description: `${document.name} is being opened in the document viewer.`,
+    })
   }
 
   const getCategoryColor = (category: Document["category"]) => {
@@ -266,12 +405,23 @@ export function DocumentsContent() {
                 </div>
               </div>
               <div className="flex gap-2 mt-4">
-                <Button size="sm" variant="outline" className="flex-1 bg-transparent">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="flex-1 bg-transparent"
+                  onClick={() => handleViewDocument(document)}
+                >
                   <Eye className="w-4 h-4 mr-1" />
                   View
                 </Button>
-                <Button size="sm" variant="outline">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => handleDownloadDocument(document)}
+                  disabled={downloadingId === document.id}
+                >
                   <Download className="w-4 h-4" />
+                  {downloadingId === document.id ? "..." : ""}
                 </Button>
                 <Button
                   size="sm"

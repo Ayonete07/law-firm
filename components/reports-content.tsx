@@ -4,11 +4,24 @@ import { useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { BarChart3, TrendingUp, TrendingDown, Users, Briefcase, DollarSign } from "lucide-react"
+import {
+  BarChart3,
+  TrendingUp,
+  TrendingDown,
+  Users,
+  Briefcase,
+  DollarSign,
+  Download,
+  FileText,
+  Mail,
+} from "lucide-react"
+import { useToast } from "@/hooks/use-toast"
 
 export function ReportsContent() {
   const [selectedPeriod, setSelectedPeriod] = useState("monthly")
   const [selectedReport, setSelectedReport] = useState("overview")
+  const [isExporting, setIsExporting] = useState(false)
+  const { toast } = useToast()
 
   const kpiData = [
     {
@@ -53,6 +66,13 @@ export function ReportsContent() {
     { category: "Criminal", won: 65, lost: 30, pending: 18 },
   ]
 
+  const attorneyPerformance = [
+    { name: "Ms. Sophia", cases: 18, rating: 4.9, revenue: 45000 },
+    { name: "Ms. Emma Burton", cases: 15, rating: 4.7, revenue: 38000 },
+    { name: "Mr. Tristan", cases: 12, rating: 4.8, revenue: 32000 },
+    { name: "Mr. Jacob", cases: 8, rating: 4.6, revenue: 25000 },
+  ]
+
   const getColorClasses = (color: string) => {
     switch (color) {
       case "blue":
@@ -65,6 +85,166 @@ export function ReportsContent() {
         return "bg-orange-100 text-orange-600"
       default:
         return "bg-gray-100 text-gray-600"
+    }
+  }
+
+  const generateCSV = (data: any[], filename: string) => {
+    const headers = Object.keys(data[0]).join(",")
+    const rows = data.map((row) => Object.values(row).join(",")).join("\n")
+    const csvContent = `${headers}\n${rows}`
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" })
+    const link = document.createElement("a")
+    const url = URL.createObjectURL(blob)
+    link.setAttribute("href", url)
+    link.setAttribute("download", filename)
+    link.style.visibility = "hidden"
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+  }
+
+  const generatePDF = async (reportType: string) => {
+    // Simulate PDF generation
+    const content = `
+D-CASE Law Firm - ${reportType.toUpperCase()} REPORT
+Generated on: ${new Date().toLocaleDateString()}
+Period: ${selectedPeriod}
+
+=== KEY PERFORMANCE INDICATORS ===
+${kpiData.map((kpi) => `${kpi.title}: ${kpi.value} (${kpi.change})`).join("\n")}
+
+=== CASE OUTCOMES BY PRACTICE AREA ===
+${caseOutcomes
+  .map((outcome) => `${outcome.category}: Won: ${outcome.won}, Lost: ${outcome.lost}, Pending: ${outcome.pending}`)
+  .join("\n")}
+
+=== ATTORNEY PERFORMANCE ===
+${attorneyPerformance
+  .map(
+    (attorney) =>
+      `${attorney.name}: ${attorney.cases} cases, Rating: ${attorney.rating}, Revenue: $${attorney.revenue.toLocaleString()}`,
+  )
+  .join("\n")}
+
+=== SUMMARY ===
+This report provides a comprehensive overview of the law firm's performance for the ${selectedPeriod} period.
+Total active cases: 850
+Total active clients: 324
+Monthly revenue: $125,400
+Case success rate: 87%
+    `
+
+    const blob = new Blob([content], { type: "application/pdf" })
+    const link = document.createElement("a")
+    const url = URL.createObjectURL(blob)
+    link.setAttribute("href", url)
+    link.setAttribute("download", `D-CASE_${reportType}_Report_${new Date().toISOString().split("T")[0]}.pdf`)
+    link.style.visibility = "hidden"
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+  }
+
+  const generateExcel = (reportType: string) => {
+    // Create Excel-like CSV with multiple sheets simulation
+    const kpiSheet = `KPI Data\n${kpiData.map((kpi) => `${kpi.title},${kpi.value},${kpi.change}`).join("\n")}`
+    const caseOutcomesSheet = `\n\nCase Outcomes\n${caseOutcomes.map((outcome) => `${outcome.category},${outcome.won},${outcome.lost},${outcome.pending}`).join("\n")}`
+    const attorneySheet = `\n\nAttorney Performance\n${attorneyPerformance.map((attorney) => `${attorney.name},${attorney.cases},${attorney.rating},${attorney.revenue}`).join("\n")}`
+
+    const excelContent = kpiSheet + caseOutcomesSheet + attorneySheet
+
+    const blob = new Blob([excelContent], { type: "application/vnd.ms-excel" })
+    const link = document.createElement("a")
+    const url = URL.createObjectURL(blob)
+    link.setAttribute("href", url)
+    link.setAttribute("download", `D-CASE_${reportType}_Report_${new Date().toISOString().split("T")[0]}.xlsx`)
+    link.style.visibility = "hidden"
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+  }
+
+  const handleExport = async (format: "pdf" | "excel" | "csv") => {
+    setIsExporting(true)
+
+    try {
+      // Simulate processing time
+      await new Promise((resolve) => setTimeout(resolve, 1500))
+
+      const reportType = selectedReport
+      const timestamp = new Date().toISOString().split("T")[0]
+
+      switch (format) {
+        case "pdf":
+          await generatePDF(reportType)
+          toast({
+            title: "PDF Export Successful",
+            description: `${reportType} report has been downloaded as PDF.`,
+          })
+          break
+        case "excel":
+          generateExcel(reportType)
+          toast({
+            title: "Excel Export Successful",
+            description: `${reportType} report has been downloaded as Excel file.`,
+          })
+          break
+        case "csv":
+          const csvData = [
+            ...kpiData.map((kpi) => ({ type: "KPI", name: kpi.title, value: kpi.value, change: kpi.change })),
+            ...caseOutcomes.map((outcome) => ({
+              type: "Case Outcome",
+              name: outcome.category,
+              won: outcome.won,
+              lost: outcome.lost,
+              pending: outcome.pending,
+            })),
+            ...attorneyPerformance.map((attorney) => ({
+              type: "Attorney",
+              name: attorney.name,
+              cases: attorney.cases,
+              rating: attorney.rating,
+              revenue: attorney.revenue,
+            })),
+          ]
+          generateCSV(csvData, `D-CASE_${reportType}_Report_${timestamp}.csv`)
+          toast({
+            title: "CSV Export Successful",
+            description: `${reportType} report has been downloaded as CSV file.`,
+          })
+          break
+      }
+    } catch (error) {
+      toast({
+        title: "Export Failed",
+        description: "There was an error exporting the report. Please try again.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsExporting(false)
+    }
+  }
+
+  const handleEmailReport = async () => {
+    setIsExporting(true)
+
+    try {
+      // Simulate email sending
+      await new Promise((resolve) => setTimeout(resolve, 2000))
+
+      toast({
+        title: "Report Emailed Successfully",
+        description: `${selectedReport} report has been sent to your email address.`,
+      })
+    } catch (error) {
+      toast({
+        title: "Email Failed",
+        description: "There was an error sending the report. Please try again.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsExporting(false)
     }
   }
 
@@ -229,12 +409,7 @@ export function ReportsContent() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {[
-                { name: "Ms. Sophia", cases: 18, rating: 4.9 },
-                { name: "Ms. Emma Burton", cases: 15, rating: 4.7 },
-                { name: "Mr. Tristan", cases: 12, rating: 4.8 },
-                { name: "Mr. Jacob", cases: 8, rating: 4.6 },
-              ].map((attorney, index) => (
+              {attorneyPerformance.map((attorney, index) => (
                 <div key={index} className="flex items-center justify-between">
                   <div>
                     <p className="font-medium text-sm">{attorney.name}</p>
@@ -310,11 +485,48 @@ export function ReportsContent() {
           <CardTitle>Export Reports</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex gap-4">
-            <Button variant="outline">Export as PDF</Button>
-            <Button variant="outline">Export as Excel</Button>
-            <Button variant="outline">Email Report</Button>
+          <div className="flex flex-wrap gap-4">
+            <Button
+              variant="outline"
+              onClick={() => handleExport("pdf")}
+              disabled={isExporting}
+              className="flex items-center gap-2"
+            >
+              <FileText className="w-4 h-4" />
+              {isExporting ? "Exporting..." : "Export as PDF"}
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => handleExport("excel")}
+              disabled={isExporting}
+              className="flex items-center gap-2"
+            >
+              <Download className="w-4 h-4" />
+              {isExporting ? "Exporting..." : "Export as Excel"}
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => handleExport("csv")}
+              disabled={isExporting}
+              className="flex items-center gap-2"
+            >
+              <Download className="w-4 h-4" />
+              {isExporting ? "Exporting..." : "Export as CSV"}
+            </Button>
+            <Button
+              variant="outline"
+              onClick={handleEmailReport}
+              disabled={isExporting}
+              className="flex items-center gap-2 bg-transparent"
+            >
+              <Mail className="w-4 h-4" />
+              {isExporting ? "Sending..." : "Email Report"}
+            </Button>
           </div>
+          <p className="text-sm text-gray-600 mt-4">
+            Reports will be generated based on the selected report type and time period. Downloads will start
+            automatically once processing is complete.
+          </p>
         </CardContent>
       </Card>
     </div>
