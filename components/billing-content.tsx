@@ -105,7 +105,7 @@ export function BillingContent() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <h1 className="text-2xl font-bold">Billing & Invoicing</h1>
+          <h1 className="md:text-2xl font-bold">Billing & Invoicing</h1>
         </div>
         <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
           <DialogTrigger asChild>
