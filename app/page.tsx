@@ -223,7 +223,7 @@ export default function HomePage() {
     
       <div className="flex min-h-screen w-full bg-gray-50">
         
-        <main className="overflow-auto"><DashboardContent /></main>
+        <main className="overflow-auto w-full"><DashboardContent /></main>
       </div>
 
   )
