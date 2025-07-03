@@ -171,7 +171,7 @@ export function CasesContent() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <h1 className="text-2xl font-bold">Case Management</h1>
+          <h1 className="md:text-2xl font-bold">Case Management</h1>
         </div>
         <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
           <DialogTrigger asChild>
